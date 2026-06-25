@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slipway — guided app-store launches</title>
+<style>
+  :root{
+    --ink:#16202C; --paper:#F4F6F7; --surface:#FFFFFF;
+    --hairline:#DDE3E6; --muted:#5A6873; --muted-2:#8593A0;
+    --accent:#0E7C6B; --accent-deep:#0A5D50; --accent-wash:#E4F0ED;
+    --warn:#B45309; --fail:#E5484D;
+    --log-bg:#0F1820; --log-line:#1C2A33; --log-text:#AEBCC4; --log-dim:#6C7E89;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);line-height:1.62;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  a{color:inherit}
+  h1,h2,h3{text-wrap:balance;margin:0}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent-deep);font-weight:600;
+  }
+
+  /* ---- nav ---- */
+  nav{
+    position:sticky;top:0;z-index:20;background:rgba(244,246,247,.82);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--hairline);
+  }
+  .nav-row{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em;font-size:18px}
+  .brand svg{display:block}
+  .nav-links{display:flex;align-items:center;gap:28px}
+  .nav-links a{font-size:14px;color:var(--muted);text-decoration:none;font-weight:500}
+  .nav-links a:hover{color:var(--ink)}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);
+    font-weight:600;font-size:14px;border-radius:8px;border:1px solid transparent;
+    padding:10px 16px;cursor:pointer;text-decoration:none;transition:transform .12s ease,background .15s ease,border-color .15s ease;
+  }
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-deep);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--hairline)}
+  .btn-ghost:hover{border-color:var(--muted-2)}
+  .nav-cta{padding:9px 15px}
+
+  /* ---- hero ---- */
+  .hero{padding:88px 0 72px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+  .hero h1{
+    font-size:clamp(38px,5.2vw,60px);line-height:1.02;letter-spacing:-.03em;font-weight:800;
+    margin:18px 0 22px;
+  }
+  .hero h1 .green{color:var(--accent)}
+  .hero p.lede{font-size:19px;color:var(--muted);max-width:34ch;margin:0 0 30px}
+  .hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .hero-note{font-family:var(--mono);font-size:12px;color:var(--muted-2);margin-top:18px;letter-spacing:.01em}
+
+  /* ---- terminal log card ---- */
+  .log{
+    background:var(--log-bg);border-radius:14px;overflow:hidden;
+    box-shadow:0 24px 60px -28px rgba(16,32,40,.55),0 2px 0 rgba(255,255,255,.4) inset;
+    border:1px solid #223038;
+  }
+  .log-bar{display:flex;align-items:center;gap:7px;padding:13px 16px;border-bottom:1px solid var(--log-line)}
+  .log-bar i{width:11px;height:11px;border-radius:50%;display:block;background:#33444E}
+  .log-bar .ttl{margin-left:10px;font-family:var(--mono);font-size:12px;color:var(--log-dim);letter-spacing:.02em}
+  .log-body{padding:18px 18px 22px;font-family:var(--mono);font-size:13.5px;line-height:1.95}
+  .log-body .ln{display:flex;gap:10px;white-space:nowrap;opacity:0;transform:translateY(4px);animation:rise .5s ease forwards}
+  .ln .ic{width:14px;flex:none;text-align:center}
+  .ln.cmd{color:#E7EEF1}
+  .ln.cmd .ic{color:var(--accent)}
+  .ln.err{color:#C68B8D}
+  .ln.err .ic{color:var(--fail)}
+  .ln.err .msg{position:relative}
+  .ln.strike .msg::after{
+    content:"";position:absolute;left:-2px;right:-2px;top:51%;height:1.5px;background:var(--fail);
+    transform:scaleX(0);transform-origin:left;animation:strike .35s ease forwards;
+  }
+  .ln.sep{color:var(--log-dim);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase}
+  .ln.ok{color:#7EE0C0;font-weight:600}
+  .ln.ok .ic{color:#2BD49B}
+  .ln.ok .msg{position:relative}
+  .log-cap{font-family:var(--mono);font-size:11.5px;color:var(--muted-2);margin-top:14px;text-align:center;letter-spacing:.02em}
+
+  .ln:nth-child(1){animation-delay:.15s}
+  .ln:nth-child(2){animation-delay:.55s}
+  .ln:nth-child(3){animation-delay:.95s}
+  .ln:nth-child(4){animation-delay:1.35s}
+  .ln:nth-child(5){animation-delay:1.75s}
+  .ln:nth-child(6){animation-delay:2.2s}
+  .ln:nth-child(7){animation-delay:2.55s}
+  .ln.strike:nth-child(2) .msg::after{animation-delay:.85s}
+  .ln.strike:nth-child(3) .msg::after{animation-delay:1.25s}
+  .ln.strike:nth-child(4) .msg::after{animation-delay:1.65s}
+  .ln.strike:nth-child(5) .msg::after{animation-delay:2.05s}
+  .ln.ok .msg{animation:okpop .4s ease 2.55s both}
+
+  @keyframes rise{to{opacity:1;transform:none}}
+  @keyframes strike{to{transform:scaleX(1)}}
+  @keyframes okpop{0%{text-shadow:0 0 0 transparent}40%{text-shadow:0 0 18px rgba(43,212,155,.6)}100%{text-shadow:0 0 0 transparent}}
+
+  /* ---- pain strip ---- */
+  .band{background:var(--surface);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)}
+  section{padding:84px 0}
+  .pain h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;font-weight:800;margin:14px 0 0;max-width:18ch}
+  .pain .sub{color:var(--muted);font-size:18px;margin:16px 0 0;max-width:52ch}
+  .pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:40px}
+  .pain-card{
+    background:var(--paper);border:1px solid var(--hairline);border-left:3px solid var(--fail);
+    border-radius:10px;padding:16px 18px;
+  }
+  .pain-card code{font-family:var(--mono);font-size:13px;color:#9F3B3E;font-weight:600;display:block;line-height:1.5}
+  .pain-card span{font-size:13.5px;color:var(--muted);display:block;margin-top:7px}
+
+  /* ---- steps ---- */
+  .steps h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;font-weight:800;margin:14px 0 0}
+  .steps .sub{color:var(--muted);font-size:18px;margin:16px 0 0;max-width:50ch}
+  .step-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:48px}
+  .step{position:relative}
+  .step .no{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.08em}
+  .step .bar{height:2px;background:var(--hairline);margin:14px 0 16px;position:relative;overflow:hidden}
+  .step .bar::after{content:"";position:absolute;inset:0;width:36%;background:var(--accent)}
+  .step h3{font-size:17px;letter-spacing:-.01em;font-weight:700}
+  .step p{font-size:14.5px;color:var(--muted);margin:8px 0 0}
+
+  /* ---- features ---- */
+  .features{background:var(--ink);color:#E7EDEF}
+  .features .eyebrow{color:#5ED6B6}
+  .features h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;font-weight:800;margin:14px 0 0;color:#fff;max-width:20ch}
+  .features .sub{color:#9FB0B8;font-size:18px;margin:16px 0 0;max-width:54ch}
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:48px;background:#243239;border:1px solid #243239;border-radius:14px;overflow:hidden}
+  .feat{background:var(--ink);padding:28px 26px}
+  .feat .fi{width:34px;height:34px;border-radius:8px;background:rgba(94,214,182,.12);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .feat .fi svg{display:block}
+  .feat h3{font-size:16.5px;color:#fff;letter-spacing:-.01em;font-weight:700}
+  .feat p{font-size:14px;color:#9FB0B8;margin:9px 0 0;line-height:1.6}
+  .feat code{font-family:var(--mono);font-size:12.5px;color:#7EE0C0;background:rgba(94,214,182,.1);padding:1px 5px;border-radius:4px}
+
+  /* ---- who ---- */
+  .who h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;font-weight:800;margin:14px 0 0}
+  .who-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:44px}
+  .who-card{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:26px 24px}
+  .who-card .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-deep);font-weight:600}
+  .who-card h3{font-size:18px;margin:12px 0 0;letter-spacing:-.01em;font-weight:700}
+  .who-card p{font-size:14.5px;color:var(--muted);margin:9px 0 0}
+
+  /* ---- cta ---- */
+  .cta-band{background:linear-gradient(180deg,var(--accent-wash),var(--paper))}
+  .cta-box{text-align:center;max-width:42rem;margin:0 auto}
+  .cta-box h2{font-size:clamp(30px,4vw,46px);letter-spacing:-.025em;font-weight:800}
+  .cta-box p{font-size:19px;color:var(--muted);margin:18px auto 30px;max-width:46ch}
+  .signup{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .signup input{
+    font-family:var(--sans);font-size:15px;padding:12px 16px;border:1px solid var(--hairline);
+    border-radius:8px;min-width:280px;background:#fff;color:var(--ink);
+  }
+  .signup input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .cta-fine{font-family:var(--mono);font-size:12px;color:var(--muted-2);margin-top:18px}
+
+  /* ---- footer ---- */
+  footer{background:var(--ink);color:#8FA0A8;padding:46px 0}
+  .foot-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px}
+  .foot-row .brand{color:#fff;font-size:16px}
+  .foot-links{display:flex;gap:24px;font-size:13.5px}
+  .foot-links a{color:#8FA0A8;text-decoration:none}
+  .foot-links a:hover{color:#fff}
+  .foot-note{font-family:var(--mono);font-size:11.5px;color:#5C6E77;margin-top:22px}
+
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:40px}
+    .hero{padding:56px 0 48px}
+    .step-grid{grid-template-columns:repeat(2,1fr);gap:28px}
+    .feat-grid{grid-template-columns:1fr}
+    .who-grid{grid-template-columns:1fr}
+    .pain-grid{grid-template-columns:1fr}
+    .nav-links a:not(.nav-cta){display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .ln{animation:none!important;opacity:1!important;transform:none!important}
+    .ln.strike .msg::after{animation:none!important;transform:scaleX(1)!important}
+    .ln.ok .msg{animation:none!important}
+    .btn:hover{transform:none}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-row">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2 20 L20 4" stroke="#0E7C6B" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M2 20 L14 20" stroke="#16202C" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="20" cy="4" r="2.6" fill="#0E7C6B"/>
+      </svg>
+      Slipway
+    </div>
+    <div class="nav-links">
+      <a href="#pain">The problem</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#start" class="btn btn-primary nav-cta">Request access</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Guided app-store launches</span>
+      <h1>Get your first build to the store. <span class="green">On the first try.</span></h1>
+      <p class="lede">Slipway provisions the signing, store records, and CI config that every first launch gets wrong — then ships you a green build to TestFlight and Google Play.</p>
+      <div class="hero-cta">
+        <a href="#start" class="btn btn-primary">Request early access</a>
+        <a href="#how" class="btn btn-ghost">See how it works</a>
+      </div>
+      <p class="hero-note">Sits on top of Codemagic &amp; Fastlane — it configures your CI, it doesn't replace it.</p>
+    </div>
+
+    <div>
+      <div class="log" role="img" aria-label="A build log showing four code-signing errors being resolved into one successful TestFlight upload.">
+        <div class="log-bar"><i></i><i></i><i></i><span class="ttl">ios — first launch</span></div>
+        <div class="log-body">
+          <div class="ln cmd"><span class="ic">$</span><span class="msg">slipway launch ios</span></div>
+          <div class="ln err strike"><span class="ic">✗</span><span class="msg">unknown variable group(s): app_store</span></div>
+          <div class="ln err strike"><span class="ic">✗</span><span class="msg">No matching profiles for "de.maiss.…" (app_store)</span></div>
+          <div class="ln err strike"><span class="ic">✗</span><span class="msg">No valid code signing certificates were found</span></div>
+          <div class="ln err strike"><span class="ic">✗</span><span class="msg">export_options.plist does not exist</span></div>
+          <div class="ln sep"><span class="ic">—</span><span class="msg">slipway resolved 4 issues</span></div>
+          <div class="ln ok"><span class="ic">✓</span><span class="msg">Signed, archived, uploaded to TestFlight</span></div>
+        </div>
+      </div>
+      <p class="log-cap">Real errors from a real first launch. Slipway turns them into one green build.</p>
+    </div>
+  </div>
+</header>
+
+<section class="band pain" id="pain">
+  <div class="wrap">
+    <span class="eyebrow">The problem</span>
+    <h2>Nobody's first iOS build works. Yours fails for hours.</h2>
+    <p class="sub">The code is the easy part. The launch is a maze of signing assets, store records, and config that live in four different places and fail with messages that don't tell you what to do. Sound familiar?</p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <code>No matching profiles found for bundle identifier … "app_store"</code>
+        <span>The profile exists in Apple's portal — but your CI reads from a different store entirely.</span>
+      </div>
+      <div class="pain-card">
+        <code>No valid code signing certificates were found</code>
+        <span>Apple never hands back a private key, so the cert your build fetched can't actually sign anything.</span>
+      </div>
+      <div class="pain-card">
+        <code>Android: applicationId contains an invalid character '-'</code>
+        <span>The bundle ID that's legal on iOS quietly breaks the Android build.</span>
+      </div>
+      <div class="pain-card">
+        <code>Auth works in dev, blank screen for testers</code>
+        <span>An empty env var silently dropped the release build into a fake-login mode. No crash, no clue.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="steps" id="how">
+  <div class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h2>Four steps. One green build.</h2>
+    <p class="sub">A guided path, in order — Slipway does the provisioning and hands the right config to your CI.</p>
+    <div class="step-grid">
+      <div class="step">
+        <div class="no">STEP 01</div><div class="bar"></div>
+        <h3>Connect your repo</h3>
+        <p>Point Slipway at your Flutter, React Native, or native project and your Apple &amp; Google accounts.</p>
+      </div>
+      <div class="step">
+        <div class="no">STEP 02</div><div class="bar"></div>
+        <h3>Answer the interview</h3>
+        <p>A short guided Q&amp;A: bundle ID, org accounts, backend endpoints. Slipway flags the traps before they cost a build.</p>
+      </div>
+      <div class="step">
+        <div class="no">STEP 03</div><div class="bar"></div>
+        <h3>It provisions everything</h3>
+        <p>Certificates, profiles, store records, env config — created and synced to where the build actually looks.</p>
+      </div>
+      <div class="step">
+        <div class="no">STEP 04</div><div class="bar"></div>
+        <h3>Ship the first build</h3>
+        <p>A signed build lands in TestFlight and Google Play internal testing. Invite testers and go.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="wrap">
+    <span class="eyebrow">What Slipway handles</span>
+    <h2>The launch gauntlet, automated.</h2>
+    <p class="sub">Every step here is a wall real teams hit on their first ship. Slipway clears them once and remembers.</p>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="fi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.4 8.3 8 10 4.6-1.7 8-5 8-10V6l-8-4Z" stroke="#5ED6B6" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <h3>Signing, solved once</h3>
+        <p>Distribution cert and its private key created and stored together — then the profile is generated and synced where the build reads it, not just Apple's portal.</p>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="#5ED6B6" stroke-width="1.8"/><path d="M8 12l3 3 5-6" stroke="#5ED6B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Store records, pre-flighted</h3>
+        <p>App IDs, the numeric App Store ID, capabilities, the Play app record — created and wired before the first build, in the right order.</p>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="#5ED6B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Config that can't silently break</h3>
+        <p>Validates your production env vars and pings your endpoints, so a release never quietly falls back to a dev or fake-auth mode.</p>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#5ED6B6" stroke-width="1.8"/><path d="M12 8v5M12 16h.01" stroke="#5ED6B6" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Bundle IDs that build on both</h3>
+        <p>Catches the whole class of cross-platform mistakes — like a <code>-</code> that's legal on iOS but fails Android — before they cost you a run.</p>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 8l-4 4 4 4M17 8l4 4-4 4M14 5l-4 14" stroke="#5ED6B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>CI you keep</h3>
+        <p>Generates your <code>codemagic.yaml</code> or Fastlane setup and sits on top of the CI you already run. No lock-in, no migration.</p>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v6M12 21a7 7 0 1 0-7-7" stroke="#5ED6B6" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Every error mapped to a fix</h3>
+        <p>When something does fail, you get the cause and the next action in plain language — not a stack trace and a forum search.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band who">
+  <div class="wrap">
+    <span class="eyebrow">Who it's for</span>
+    <h2>For everyone shipping their first build.</h2>
+    <div class="who-grid">
+      <div class="who-card">
+        <div class="tag">Indie &amp; solo</div>
+        <h3>Your first app, not your first fight</h3>
+        <p>Skip the week of signing tutorials. Spend it on the product, ship to TestFlight tonight.</p>
+      </div>
+      <div class="who-card">
+        <div class="tag">Agencies</div>
+        <h3>A repeatable first launch, every client</h3>
+        <p>The same provisioning gauntlet for every new client app — done once, templated, and handed off clean.</p>
+      </div>
+      <div class="who-card">
+        <div class="tag">Product teams</div>
+        <h3>Your team's first mobile release</h3>
+        <p>Web teams adding a mobile app inherit none of the tribal Apple knowledge. Slipway is the knowledge.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band" id="start">
+  <div class="wrap cta-box">
+    <h2>Launch day, on the first try.</h2>
+    <p>We're onboarding early teams now. Leave your email and we'll bring your first launch through Slipway with you.</p>
+    <form class="signup" onsubmit="event.preventDefault();this.querySelector('input').value='';this.querySelector('.btn').textContent='Thanks — we\'ll be in touch';">
+      <input type="email" required placeholder="you@studio.com" aria-label="Email address" />
+      <button type="submit" class="btn btn-primary">Request early access</button>
+    </form>
+    <p class="cta-fine">No card. First app's launch is on us.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-row">
+      <div class="brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M2 20 L20 4" stroke="#5ED6B6" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M2 20 L14 20" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="20" cy="4" r="2.6" fill="#5ED6B6"/>
+        </svg>
+        Slipway
+      </div>
+      <div class="foot-links">
+        <a href="#pain">Problem</a>
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#start">Early access</a>
+      </div>
+    </div>
+    <p class="foot-note">Slipway is a working name. Concept page — built from the scar tissue of one very real first launch.</p>
+  </div>
+</footer>
+</body>
+</html>
