@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Slipway — Sign up</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+  <main class="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-12">
+    <section class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+      <p class="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">Slipway</p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight">Create your account</h1>
+      <p class="mt-2 text-sm text-slate-600">Sign up and we will send a one-time confirmation code to your email.</p>
+      <form class="mt-8 space-y-4" method="post" action="#">
+        <label class="block text-sm font-medium text-slate-700">
+          Email
+          <input type="email" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-teal-600 focus:ring-2" placeholder="you@example.com">
+        </label>
+        <label class="block text-sm font-medium text-slate-700">
+          Password
+          <input type="password" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-teal-600 focus:ring-2" placeholder="Create a password">
+        </label>
+        <a href="/signup/confirm/" class="block w-full rounded-lg bg-teal-700 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-teal-800">Continue</a>
+      </form>
+      <p class="mt-6 text-center text-sm text-slate-600">
+        Already have an account?
+        <a href="/login/" class="font-semibold text-teal-700 hover:text-teal-800">Log in</a>
+      </p>
+    </section>
+  </main>
+</body>
+</html>
